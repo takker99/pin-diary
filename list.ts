@@ -1,47 +1,32 @@
-export interface PageMetaData {
-  title: string;
-  pin: number;
-  pageId: string;
-  commitId: string;
-};
-interface Page {
-  title: string;
-  pin: number;
-  id: string;
-  commitId: string;
+import { listPages, BasePage } from "./deps.ts";
+
+export async function* listPinnedDiaries(project: string): AsyncGenerator<BasePage> {
+  for await (const page of listPinnedPages(project)) {
+    if (!/\d{4}\/\d{2}\/\d{2}/.test(page.title)) continue;
+    yield page;
+  }
 }
 
-export async function listDiaries(project: string) {
-  const pages = await fetchPages(project);
-  return pages.flatMap(page => /\d{4}\/\d{2}\/\d{2}/.test(page.title) ?
-    [{pageId: page.id, title: page.title, commitId: page.commitId, pin: page.pin}] :
-    []
-  );
+/** 全てのピン留めされたページを取得する */
+async function* listPinnedPages(project: string, skip = 0): AsyncGenerator<BasePage> {
+  const { count, pages } = await ensureList(project, skip);
+  for (const page of pages) {
+    if (page.pin === 0) continue;
+    yield page;
+  }
+  if ((pages.at(-1)?.pin ?? 0) === 0) return;
+  yield* listPinnedPages(project, skip + 1000);
 }
 
-async function fetchPages(project: string) {
-  const res = await fetch(
-    `https://scrapbox.io/api/pages/${project}?limit=1`
-  );
-  const { count: pageNum } = await res.json();
-  const limitParam = Math.min(pageNum, 1000); // APIで一度に取得するページ数
-  const maxIndex = Math.floor(pageNum / 1000) + 1; // APIを叩く回数
+async function ensureList(project: string, skip: number) {
+  const result = await listPages(project, { limit: 1000, skip });
+  // login errorなどは全部例外として扱う
+  if (!result.ok) {
+    const error = new Error();
+    error.name = result.value.name;
+    error.message = result.value.message;
+    throw error;
+  }
 
-  // 一気にAPIを叩いてページ情報を取得する
-  const results = await Promise.all(
-    [...Array(maxIndex).keys()]
-      .map(async (index) => {
-        const response = await fetch(
-          `/api/pages/${
-            project
-          }/?limit=${
-            limitParam
-          }&skip=${index * 1000}`
-        );
-        const { pages }: {pages: Page[];} = await response.json();
-        return pages;
-      })
-  );
-
-  return results.flat();
+  return result.value;
 }
