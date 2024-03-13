@@ -1,8 +1,11 @@
-import { listPages, BasePage } from "./deps.ts";
+import { BasePage, listPages } from "./deps.ts";
 
 /** 全てのピン留めされたページを取得する */
-export async function* listPinnedPages(project: string, skip = 0): AsyncGenerator<BasePage> {
-  const { count, pages } = await ensureList(project, skip);
+export async function* listPinnedPages(
+  project: string,
+  skip = 0,
+): AsyncGenerator<BasePage> {
+  const { pages } = await ensureList(project, skip);
   for (const page of pages) {
     if (page.pin === 0) continue;
     yield page;

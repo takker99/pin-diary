@@ -2,15 +2,15 @@
 /// <reference lib="esnext"/>
 /// <reference lib="dom"/>
 import {
-  pin,
-  unpin,
-  patch,
-  useStatusBar,
-  sleep,
-  makeSocket,
   disconnect,
+  makeSocket,
+  patch,
+  pin,
+  sleep,
+  unpin,
+  useStatusBar,
 } from "./deps.ts";
-import{patchTemplate as format} from "./format.ts";
+import { patchTemplate as format } from "./format.ts";
 import { listPinnedPages } from "./list.ts";
 import type { Scrapbox, Socket } from "./deps.ts";
 declare const scrapbox: Scrapbox;
@@ -21,7 +21,7 @@ export interface DiaryInit {
     title: string;
     header: string[];
     footer: string[];
-  },
+  };
   /** 今日以外の日記ページかどうかを判断する函数
    *
    * @param title 判断対象のページタイトル
@@ -39,9 +39,9 @@ export const launch = (
   const interval = init.interval ?? 24 * 3600 * 1000;
 
   const handleChange = () =>
-    scrapbox.Project.name === project ?
-      startObserve(project, interval, init) :
-      endObserve();
+    scrapbox.Project.name === project
+      ? startObserve(project, interval, init)
+      : endObserve();
   handleChange();
   scrapbox.addListener("project:changed", handleChange);
 };
@@ -64,7 +64,7 @@ const endObserve = () => clearInterval(updateTimer);
 export const pinDiary = async (
   project: string,
   date: Date,
-  { makeDiary, isOldDiary, }: DiaryInit,
+  { makeDiary, isOldDiary }: DiaryInit,
 ): Promise<void> => {
   const { render, dispose } = useStatusBar();
   let socket: Socket | undefined;
@@ -72,7 +72,7 @@ export const pinDiary = async (
     // 今日以外の日付ページを外す
     render(
       { type: "spinner" },
-      { type: "text", text: `unpin other diary pages...`},
+      { type: "text", text: `unpin other diary pages...` },
     );
     socket = await makeSocket();
     for await (const { title } of listPinnedPages(project)) {
@@ -84,19 +84,19 @@ export const pinDiary = async (
     const { title, header, footer } = makeDiary(date);
     render(
       { type: "spinner" },
-      { type: "text", text: `pin "/${project}/${title}"...`},
+      { type: "text", text: `pin "/${project}/${title}"...` },
     );
     await pin(project, title, { socket, create: true });
 
     // 今日の日付ページにtemplateを挿入する
     render(
       { type: "spinner" },
-      { type: "text", text: `format "/${project}/${title}"...`},
+      { type: "text", text: `format "/${project}/${title}"...` },
     );
     await patch(project, title, (lines) => [
       lines[0].text,
       ...format(
-        lines.slice(1).map(line => line.text),
+        lines.slice(1).map((line) => line.text),
         header,
         footer,
       ),
@@ -104,14 +104,16 @@ export const pinDiary = async (
 
     render(
       { type: "check-circle" },
-      { type: "text", text: `Pinned "/${project}/${title}".`},
+      { type: "text", text: `Pinned "/${project}/${title}".` },
     );
-  } catch(e: unknown) {
+  } catch (e: unknown) {
     render(
       { type: "exclamation-triangle" },
-      { type: "text", text: e instanceof Error ?
-        `${e.name} ${e.message}` :
-        `Unknown error! (see developper console)`,
+      {
+        type: "text",
+        text: e instanceof Error
+          ? `${e.name} ${e.message}`
+          : `Unknown error! (see developper console)`,
       },
     );
     console.error(e);
