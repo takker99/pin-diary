@@ -1,14 +1,14 @@
 import {
-  getDay,
-  getWeek,
   addDays,
-  subDays,
-  subYears,
-  getYear,
-  lightFormat,
+  getDay,
   getDayOfYear,
   getDaysInYear,
+  getWeek,
+  getYear,
   intervalToDuration,
+  lightFormat,
+  subDays,
+  subYears,
 } from "./deps.ts";
 
 const format = "yyyy/MM/dd";
@@ -19,7 +19,8 @@ export const makeDiary = (date: Date): {
   footer: string[];
 } => {
   /** 井戸端で日記が始まってからの年数 */
-  const intervalY = intervalToDuration({ start: new Date(2020, 9, 9), end: date }).years;
+  const intervalY =
+    intervalToDuration({ start: new Date(2020, 9, 9), end: date }).years;
 
   return {
     title: toTitle(date),
@@ -31,7 +32,7 @@ export const makeDiary = (date: Date): {
       "",
       "今日のn年前",
       ...[...Array(intervalY).keys()].map(
-        (i) => ` [${lightFormat(subYears(date, i + 1), format)}]`
+        (i) => ` [${lightFormat(subYears(date, i + 1), format)}]`,
       ),
     ],
     footer: [
@@ -41,12 +42,12 @@ export const makeDiary = (date: Date): {
       `[/ [${lightFormat(date, "yyyy/MM")}.icon]]`,
     ],
   };
-}
+};
 
 const youbiLine = (date: Date): string => {
   const day = getDay(date);
   return [..."日月火水木金土"].map(
-    (char, i) => i === day ? `[[${char}]]` : char
+    (char, i) => i === day ? `[[${char}]]` : char,
   ).join("");
 };
 const dateRegExp = /^\d{4}\/\d{2}\/\d{2}$/;

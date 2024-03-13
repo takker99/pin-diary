@@ -1,7 +1,11 @@
-import { patchLines, findSplitIndex } from "./util.ts";
+import { findSplitIndex, patchLines } from "./util.ts";
 
 // linesにタイトルを入れないように
-export const patchTemplate = (lines: string[], headers: string[], footers: string[]): string[] => {
+export const patchTemplate = (
+  lines: string[],
+  headers: string[],
+  footers: string[],
+): string[] => {
   // headerとfooterに相当する行を補う
   const bodies = patchLines(
     patchLines(lines, headers).reverse(),
@@ -21,4 +25,4 @@ export const patchTemplate = (lines: string[], headers: string[], footers: strin
     "",
     ...bodies.slice(footerStart),
   ];
-}
+};
