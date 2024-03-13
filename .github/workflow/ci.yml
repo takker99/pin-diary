@@ -1,0 +1,24 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: "v1.x"
+      - name: Run fmt
+        run: |
+          deno fmt --check
+      - name: Run lint
+        run: |
+          deno lint
+      - name: Run check
+        run: |
+          deno check **/*.ts
+      - name: Run test
+        run: |
+          deno test --allow-read
