@@ -9,10 +9,12 @@ import {
   lightFormat,
   subDays,
   subYears,
-} from "./deps.ts";
+} from "date-fns";
 
 const format = "yyyy/MM/dd";
 
+/**
+ * Create the template for [/villagepump] */
 export const makeDiary = (date: Date): {
   title: string;
   header: string[];
@@ -51,6 +53,11 @@ const youbiLine = (date: Date): string => {
   ).join("");
 };
 const dateRegExp = /^\d{4}\/\d{2}\/\d{2}$/;
+
+/**
+ * @internal
+ * Check if `title` is not `today`'s diary page title.
+ */
 export const isOldDiary = (title: string, today: Date): boolean => {
   if (!dateRegExp.test(title)) return false;
   return toTitle(today) !== title;

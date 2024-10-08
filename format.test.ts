@@ -1,5 +1,5 @@
-import { patchTemplate } from "./format.ts";
-import { assertEquals } from "./deps.test.ts";
+import { format } from "./format.ts";
+import { assertEquals } from "@std/assert/equals";
 
 Deno.test("patchTemplate()", () => {
   const headers = [
@@ -26,7 +26,7 @@ Deno.test("patchTemplate()", () => {
     "footer end",
   ];
 
-  assertEquals<string[]>(patchTemplate(lines, headers, footers), [
+  assertEquals<string[]>(format(lines, headers, footers), [
     "header start",
     "何か",
     "aaa",
