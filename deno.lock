@@ -1,24 +1,60 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@core/unknownutil@4": "4.3.0",
+    "jsr:@cosense/std@~0.29.1": "0.29.1",
+    "jsr:@cosense/types@0.10": "0.10.1",
     "jsr:@std/assert@^1.0.6": "1.0.6",
+    "jsr:@std/encoding@1": "1.0.5",
     "jsr:@std/internal@^1.0.4": "1.0.4",
-    "npm:date-fns@^4.1.0": "4.1.0"
+    "jsr:@takker/md5@0.1": "0.1.0",
+    "jsr:@takker/parser@~0.1.2": "0.1.2",
+    "npm:date-fns@^4.1.0": "4.1.0",
+    "npm:option-t@^49.1.0": "49.2.0",
+    "npm:option-t@^49.2.0": "49.2.0"
   },
   "jsr": {
+    "@core/unknownutil@4.3.0": {
+      "integrity": "538a3687ffa81028e91d148818047df219663d0da671d906cecd165581ae55cc"
+    },
+    "@cosense/std@0.29.1": {
+      "integrity": "797c393fe9874079d42b18055c0c1b754e1d771f29c0dd2d21f9d8530b618ae6",
+      "dependencies": [
+        "jsr:@core/unknownutil",
+        "jsr:@cosense/types",
+        "jsr:@std/encoding",
+        "jsr:@takker/md5",
+        "npm:option-t@^49.1.0"
+      ]
+    },
+    "@cosense/types@0.10.1": {
+      "integrity": "13d2488a02c7b0b035a265bc3299affbdab1ea5b607516379685965cd37b2058"
+    },
     "@std/assert@1.0.6": {
       "integrity": "1904c05806a25d94fe791d6d883b685c9e2dcd60e4f9fc30f4fc5cf010c72207",
       "dependencies": [
         "jsr:@std/internal"
       ]
     },
+    "@std/encoding@1.0.5": {
+      "integrity": "ecf363d4fc25bd85bd915ff6733a7e79b67e0e7806334af15f4645c569fefc04"
+    },
     "@std/internal@1.0.4": {
       "integrity": "62e8e4911527e5e4f307741a795c0b0a9e6958d0b3790716ae71ce085f755422"
+    },
+    "@takker/md5@0.1.0": {
+      "integrity": "4c423d8247aadf7bcb1eb83c727bf28c05c21906e916517395d00aa157b6eae0"
+    },
+    "@takker/parser@0.1.2": {
+      "integrity": "c75818713aa21bef6200ff710d8d3acee8a334cf71ffb75195495e67ee8ffb98"
     }
   },
   "npm": {
     "date-fns@4.1.0": {
       "integrity": "sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg=="
+    },
+    "option-t@49.2.0": {
+      "integrity": "sha512-Div3PZRWovCM7O10oWJDE4aXshu5X5Jc1MIY2cwasaoyhpso7j2yntdZZg39peZ8ZOcGvga7JzmlyaNwKFv/dA=="
     }
   },
   "workspace": {
@@ -28,6 +64,7 @@
       "jsr:@cosense/types@~0.10.1",
       "jsr:@std/assert@^1.0.6",
       "jsr:@std/async@^1.0.5",
+      "jsr:@takker/parser@~0.1.2",
       "npm:date-fns@^4.1.0",
       "npm:option-t@^49.2.0",
       "npm:socket.io-client@^4.8.0"

@@ -1,5 +1,5 @@
 import { launch } from "../mod.ts";
-import { isOldDiary, makeDiary } from "./villagepump-template/mod.ts";
+import { villagepumpDiaryTemplate } from "./villagepump-template.ts";
 import { isWithinInterval } from "date-fns/isWithinInterval";
 
 if (
@@ -8,11 +8,5 @@ if (
     end: new Date(2022, 5, 5),
   })
 ) {
-  launch(
-    "villagepump",
-    {
-      makeDiary,
-      isOldDiary,
-    },
-  );
+  launch("villagepump", villagepumpDiaryTemplate);
 }

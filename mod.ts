@@ -24,70 +24,21 @@ import {
 } from "option-t/plain_result";
 import type { Socket } from "socket.io-client";
 import {
-  type CodeBlockError,
-  type FetchError,
-  getCodeBlock,
-} from "@cosense/std/rest";
-import { expand } from "./expand.ts";
+  type DiaryMaker,
+  load,
+  makeDiaryMaker,
+  type Template,
+  type TemplateLocation,
+} from "./template.ts";
 export { format } from "./format.ts";
 export { expand } from "./expand.ts";
 
 declare const scrapbox: Scrapbox;
 
 /**
- * Represents a template used to format a diary page.
- */
-export interface Template {
-  /** the diary page title */
-  title: string;
-  /** the diary page header */
-  header: string[];
-  /** the diary page footer */
-  footer: string[];
-}
-
-/**
  * parameters for {@linkcode launch}
  */
 export type DiaryInit = (DiaryMaker | TemplateLocation) & DiaryCommonOptions;
-
-/**
- * Represents functions used to create and format diary pages.
- *
- * This is good for creating a diary template programmatically.
- * If you want to create a just simple diary template or to modify it without updating the script, use {@linkcode TemplateLocation} instead.
- */
-export interface DiaryMaker {
-  /** 与えられた日付の日記ページのテンプレートを作る
-   *
-   * > [!NOTE]
-   * > {@linkcode launch}はplaceholdersを処理しない。
-   * > 予め{@linkcode expand}でplaceholdersを展開したテンプレートを与えること。
-   */
-  makeDiary: (date: Date) => Template;
-
-  /** 今日以外の日記ページかどうかを判断する函数
-   *
-   * @param title 判断対象のページタイトル
-   * @param today 今日の日付
-   * @param 今日以外の日記ページなら`true`, それ以外のページは `false`
-   */
-  isOldDiary: (title: string, today: Date) => boolean;
-}
-
-/**
- * Represents a location of a page which includes a diary template.
- */
-export interface TemplateLocation {
-  /** the project name of the diary temlate
-   *
-   * If it is not set, those which is passed to {@linkcode launch} or {@linkcode pinDiary} will be used.
-   */
-  project?: string;
-
-  /** the title of the diary template page */
-  title: string;
-}
 
 /**
  * Options for {@linkcode launch}
@@ -130,39 +81,6 @@ export const launch = (project: string, init: DiaryInit): () => void => {
   };
 };
 
-const makeDiaryMaker = async (
-  project: string,
-  template: TemplateLocation,
-): Promise<Result<DiaryMaker, CodeBlockError | FetchError>> => {
-  const title = await getCodeBlock(
-    template.project ?? project,
-    template.title,
-    "title",
-  );
-  if (isErr(title)) return title;
-  const header = await getCodeBlock(
-    template.project ?? project,
-    template.title,
-    "header",
-  );
-  if (isErr(header)) return header;
-  const footer = await getCodeBlock(
-    template.project ?? project,
-    template.title,
-    "footer",
-  );
-  if (isErr(footer)) return footer;
-
-  return createOk({
-    makeDiary: (date) => ({
-      title: expand(date, unwrapOk(title))[0],
-      header: expand(date, unwrapOk(header)),
-      footer: expand(date, unwrapOk(footer)),
-    }),
-    isOldDiary: (title, today) => expand(today, title)[0] !== title,
-  });
-};
-
 /**
  * Pin [/`project`/`date`] and format it with the template
  *
@@ -191,25 +109,29 @@ const makeDiaryMaker = async (
 export const pinDiary = async (
   project: string,
   date: Date,
-  init: DiaryMaker | TemplateLocation,
+  init: DiaryMaker | Template | TemplateLocation,
 ): Promise<void> => {
   const { render, dispose } = useStatusBar();
   let socket: ScrapboxSocket | undefined;
   try {
     let diaryMaker: DiaryMaker;
     if ("title" in init) {
-      const res = await makeDiaryMaker(project, init);
-      if (isOk(res)) {
-        diaryMaker = unwrapOk(res);
+      if ("header" in init) {
+        diaryMaker = makeDiaryMaker(init);
       } else {
-        const error = unwrapErr(res);
-        const text = `Failed to load template from /${
-          init.project ?? project
-        }/${init.title}.\nPlease make sure this page includes the following 3 code blocks: "title", "header", and "footer".`;
+        const res = await load(init.project ?? project, init.title);
+        if (isOk(res)) {
+          diaryMaker = makeDiaryMaker(unwrapOk(res));
+        } else {
+          const error = unwrapErr(res);
+          const text = `Failed to load template from /${
+            init.project ?? project
+          }/${init.title}.\nPlease make sure this page includes the following 3 code blocks: "title", "header", and "footer".`;
 
-        render({ type: "exclamation-triangle" }, { type: "text", text });
-        console.error(text, error);
-        return;
+          render({ type: "exclamation-triangle" }, { type: "text", text });
+          console.error(text, error);
+          return;
+        }
       }
     } else {
       diaryMaker = init;
