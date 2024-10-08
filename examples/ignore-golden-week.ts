@@ -1,6 +1,6 @@
 import { launch } from "../mod.ts";
 import { isOldDiary, makeDiary } from "./villagepump-template/mod.ts";
-import isWithinInterval from "https://deno.land/x/date_fns@v2.22.1/isWithinInterval/index.ts";
+import { isWithinInterval } from "date-fns/isWithinInterval";
 
 if (
   isWithinInterval(new Date(), {

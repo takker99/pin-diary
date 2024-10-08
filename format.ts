@@ -1,6 +1,62 @@
 import { findSplitIndex, patchLines } from "./util.ts";
 
-// linesにタイトルを入れないように
+/**
+ * Apply `headers` and `footers` to the current page `lines`.
+ *
+ * @example
+ * ```ts
+ * import { assertEquals } from "@std/assert/equals";
+ * import { patchTemplate } from "./format.ts";
+ *
+ * const headers = [
+ *   "header start",
+ *   "header content",
+ *   "",
+ *   "header end",
+ * ];
+ * const lines = [
+ *   "何か",
+ *   "aaa",
+ *   "header content",
+ *   " コメントが書いてあるかも",
+ *   "header end modified",
+ *   "",
+ *   "本文とか",
+ *   "おしまい",
+ *   "footer end",
+ *   " ↑footerの残骸",
+ * ];
+ * const footers = [
+ *   "footer start",
+ *   "footer content",
+ *   "footer end",
+ * ];
+
+ * assertEquals<string[]>(patchTemplate(lines, headers, footers), [
+ *   "header start",
+ *   "何か",
+ *   "aaa",
+ *   "header content",
+ *   " コメントが書いてあるかも",
+ *   "header end modified",
+ *   "",
+ *   "header end",
+ *   "",
+ *   "本文とか",
+ *   "おしまい",
+ *   "",
+ *   "footer start",
+ *   "footer content",
+ *   "footer end",
+ *   " ↑footerの残骸",
+ * ]);
+ * ```
+ *
+ * @param lines page content, which must not contain the title line
+ * @param headers template header
+ * @param footers template footer
+ * @returns new page content applied to
+ */
 export const patchTemplate = (
   lines: string[],
   headers: string[],
@@ -18,6 +74,7 @@ export const patchTemplate = (
     [...bodies].reverse(),
     [...footers].reverse(),
   );
+
   return [
     ...bodies.slice(0, headerStart + 1),
     "",

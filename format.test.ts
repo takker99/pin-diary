@@ -1,5 +1,5 @@
 import { patchTemplate } from "./format.ts";
-import { assertEquals } from "./deps.test.ts";
+import { assertEquals } from "@std/assert/equals";
 
 Deno.test("patchTemplate()", () => {
   const headers = [
