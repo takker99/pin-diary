@@ -28,15 +28,29 @@ export { parse } from "./parse.ts";
 declare const scrapbox: Scrapbox;
 
 /**
+ * Represents a template used to format a diary page.
+ */
+export interface Template {
+  /** the diary page title */
+  title: string;
+  /** the diary page header */
+  header: string[];
+  /** the diary page footer */
+  footer: string[];
+}
+
+/**
  * parameters for {@linkcode launch}
  */
 export interface DiaryInit {
-  /** 与えられた日付の日記ページのテンプレートを作る */
-  makeDiary: (date: Date) => {
-    title: string;
-    header: string[];
-    footer: string[];
-  };
+  /** 与えられた日付の日記ページのテンプレートを作る
+   *
+   * > [!NOTE]
+   * > {@linkcode launch}はplaceholdersを処理しない。
+   * > 予め{@linkcode parse}でplaceholdersを展開したテンプレートを与えること。
+   */
+  makeDiary: (date: Date) => Template;
+
   /** 今日以外の日記ページかどうかを判断する函数
    *
    * @param title 判断対象のページタイトル
