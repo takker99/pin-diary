@@ -28,9 +28,9 @@ import {
   type FetchError,
   getCodeBlock,
 } from "@cosense/std/rest";
-import { parse } from "./parse.ts";
+import { expand } from "./expand.ts";
 export { format } from "./format.ts";
-export { parse } from "./parse.ts";
+export { expand } from "./expand.ts";
 
 declare const scrapbox: Scrapbox;
 
@@ -62,7 +62,7 @@ export interface DiaryMaker {
    *
    * > [!NOTE]
    * > {@linkcode launch}はplaceholdersを処理しない。
-   * > 予め{@linkcode parse}でplaceholdersを展開したテンプレートを与えること。
+   * > 予め{@linkcode expand}でplaceholdersを展開したテンプレートを与えること。
    */
   makeDiary: (date: Date) => Template;
 
@@ -155,18 +155,18 @@ const makeDiaryMaker = async (
 
   return createOk({
     makeDiary: (date) => ({
-      title: parse(date, unwrapOk(title))[0],
-      header: parse(date, unwrapOk(header)),
-      footer: parse(date, unwrapOk(footer)),
+      title: expand(date, unwrapOk(title))[0],
+      header: expand(date, unwrapOk(header)),
+      footer: expand(date, unwrapOk(footer)),
     }),
-    isOldDiary: (title, today) => parse(today, title)[0] !== title,
+    isOldDiary: (title, today) => expand(today, title)[0] !== title,
   });
 };
 
 /**
  * Pin [/`project`/`date`] and format it with the template
  *
- * To understand the syntax of the template, see the example of {@linkcode parse}
+ * To understand the syntax of the template, see the example of {@linkcode expand}
  *
  * @example
  * ```ts ignore
