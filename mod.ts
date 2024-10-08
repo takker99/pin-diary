@@ -20,8 +20,15 @@ import {
   isOk,
   type Result,
   unwrapErr,
+  unwrapOk,
 } from "option-t/plain_result";
 import type { Socket } from "socket.io-client";
+import {
+  type CodeBlockError,
+  type FetchError,
+  getCodeBlock,
+} from "@cosense/std/rest";
+import { parse } from "./parse.ts";
 export { format } from "./format.ts";
 export { parse } from "./parse.ts";
 
@@ -42,7 +49,15 @@ export interface Template {
 /**
  * parameters for {@linkcode launch}
  */
-export interface DiaryInit {
+export type DiaryInit = (DiaryMaker | TemplateLocation) & DiaryCommonOptions;
+
+/**
+ * Represents functions used to create and format diary pages.
+ *
+ * This is good for creating a diary template programmatically.
+ * If you want to create a just simple diary template or to modify it without updating the script, use {@linkcode TemplateLocation} instead.
+ */
+export interface DiaryMaker {
   /** 与えられた日付の日記ページのテンプレートを作る
    *
    * > [!NOTE]
@@ -61,22 +76,51 @@ export interface DiaryInit {
 }
 
 /**
+ * Represents a location of a page which includes a diary template.
+ */
+export interface TemplateLocation {
+  /** the project name of the diary temlate
+   *
+   * If it is not set, those which is passed to {@linkcode launch} or {@linkcode pinDiary} will be used.
+   */
+  project?: string;
+
+  /** the title of the diary template page */
+  title: string;
+}
+
+/**
+ * Options for {@linkcode launch}
+ */
+export interface DiaryCommonOptions {
+  /** 日記ページの更新間隔 (ms) */
+  interval?: number;
+}
+
+/**
  * Start pin-diary
  *
  * @param project - The name of the project to pin diary pages
  * @param init - parameters for pin-diary
  * @returns a function to stop pin-diary
  */
-export const launch = (
-  project: string,
-  init: DiaryInit & { interval?: number },
-): () => void => {
+export const launch = (project: string, init: DiaryInit): () => void => {
   const interval = init.interval ?? 24 * 3600 * 1000;
 
+  let updateTimer: number | undefined;
+
+  const startObserve = async () => {
+    endObserve();
+    await pinDiary(project, new Date(), init);
+    updateTimer = setInterval(
+      () => pinDiary(project, new Date(), init),
+      interval,
+    );
+  };
+  const endObserve = () => clearInterval(updateTimer);
+
   const handleChange = () =>
-    scrapbox.Project.name === project
-      ? startObserve(project, interval, init)
-      : endObserve();
+    scrapbox.Project.name === project ? startObserve() : endObserve();
   handleChange();
   scrapbox.addListener("project:changed", handleChange);
 
@@ -86,20 +130,38 @@ export const launch = (
   };
 };
 
-let updateTimer: number | undefined;
-const startObserve = async (
+const makeDiaryMaker = async (
   project: string,
-  interval: number,
-  init: DiaryInit,
-) => {
-  endObserve();
-  await pinDiary(project, new Date(), init);
-  updateTimer = setInterval(
-    () => pinDiary(project, new Date(), init),
-    interval,
+  template: TemplateLocation,
+): Promise<Result<DiaryMaker, CodeBlockError | FetchError>> => {
+  const title = await getCodeBlock(
+    template.project ?? project,
+    template.title,
+    "title",
   );
+  if (isErr(title)) return title;
+  const header = await getCodeBlock(
+    template.project ?? project,
+    template.title,
+    "header",
+  );
+  if (isErr(header)) return header;
+  const footer = await getCodeBlock(
+    template.project ?? project,
+    template.title,
+    "footer",
+  );
+  if (isErr(footer)) return footer;
+
+  return createOk({
+    makeDiary: (date) => ({
+      title: parse(date, unwrapOk(title))[0],
+      header: parse(date, unwrapOk(header)),
+      footer: parse(date, unwrapOk(footer)),
+    }),
+    isOldDiary: (title, today) => parse(today, title)[0] !== title,
+  });
 };
-const endObserve = () => clearInterval(updateTimer);
 
 /**
  * Pin [/`project`/`date`] and format it with the template
@@ -109,13 +171,14 @@ const endObserve = () => clearInterval(updateTimer);
  * @example
  * ```ts ignore
  * import { pinDiary } from "./mod.ts";
+ * import { parse } from "./parse.ts";
  * import { lightFormat } from "date-fns";
  *
  * await pinDiary("my-project", new Date(), {
  *   makeDiary: (date) => ({
  *     title: lightFormat(date, "yyyy-MM-dd"),
  *     header: [],
- *     footer: ["[@yyyy-MM-dd-1@] ← [@yyyy-MM-dd@] → [@yyyy-MM-dd+1@]"],
+ *     footer: [parse(date, "[@yyyy-MM-dd-1@] ← [@yyyy-MM-dd@] → [@yyyy-MM-dd+1@]")],
  *   }),
  *   isOldDiary: (title, today) => title !== lightFormat(today, "yyyy-MM-dd"),
  * });
@@ -128,12 +191,31 @@ const endObserve = () => clearInterval(updateTimer);
 export const pinDiary = async (
   project: string,
   date: Date,
-  init: DiaryInit,
+  init: DiaryMaker | TemplateLocation,
 ): Promise<void> => {
-  const { makeDiary, isOldDiary } = init;
   const { render, dispose } = useStatusBar();
   let socket: ScrapboxSocket | undefined;
   try {
+    let diaryMaker: DiaryMaker;
+    if ("title" in init) {
+      const res = await makeDiaryMaker(project, init);
+      if (isOk(res)) {
+        diaryMaker = unwrapOk(res);
+      } else {
+        const error = unwrapErr(res);
+        const text = `Failed to load template from /${
+          init.project ?? project
+        }/${init.title}.\nPlease make sure this page includes the following 3 code blocks: "title", "header", and "footer".`;
+
+        render({ type: "exclamation-triangle" }, { type: "text", text });
+        console.error(text, error);
+        return;
+      }
+    } else {
+      diaryMaker = init;
+    }
+    const { makeDiary, isOldDiary } = diaryMaker;
+
     const res = await andThenAsyncForResult(
       (await connect()) as Result<
         ScrapboxSocket,
