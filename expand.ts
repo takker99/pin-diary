@@ -1,18 +1,11 @@
-import { dayToNumber } from "./dayToNumber.ts";
-import { subWeeks } from "date-fns/subWeeks";
-import { subMonths } from "date-fns/subMonths";
+import { getWeek } from "date-fns/getWeek";
+import { parse } from "./parse.ts";
+import { yyyyMMdd, zero } from "./util.ts";
+import { getDayOfYear } from "date-fns/getDayOfYear";
+import { getDaysInYear } from "date-fns/getDaysInYear";
+import { intervalToDuration } from "date-fns/intervalToDuration";
 import { subYears } from "date-fns/subYears";
-import {
-  addDays,
-  addMonths,
-  addWeeks,
-  addYears,
-  getWeek,
-  getYear,
-  lightFormat,
-  startOfWeek,
-  subDays,
-} from "date-fns";
+import { getDay } from "date-fns/getDay";
 
 /**
  * Replaces placeholders in the template with formatted date values.
@@ -59,69 +52,80 @@ import {
  * assertEquals(expand(date, "Previous year was @yyyy-MM-1y@"), ["Previous year was 2022-04"]);
  * ```
  *
+ * @example Using Special tags
+ * ```ts
+ * import { expand } from "./expand.ts";
+ * import { assertEquals } from "@std/assert/equals";
+ *
+ * const template = [
+ *   "@yyyy/MM/dd@",
+ *   "第@w@週: @day_indicator@",
+ *   "@yyyy@年 @progress@％経過",
+ *   "",
+ *   "今日のn年前",
+ *   " @[from_2020/10/09]@",
+ *   "",
+ *   "[@yyyy/MM/dd-1@]←[@yyyy/MM/dd@]→[@yyyy/MM/dd+1@]",
+ *   "[@yyyy/MM@.icon]",
+ * ].join("\n");
+ * assertEquals(expand(new Date(2024, 9, 1), template), [
+ *   "2024/10/01",
+ *   "第40週: 日月[[火]]水木金土",
+ *   "2024年 75.14％経過",
+ *   "",
+ *   "今日のn年前",
+ *   " [2023/10/01]",
+ *   " [2022/10/01]",
+ *   " [2021/10/01]",
+ *   "",
+ *   "[2024/09/30]←[2024/10/01]→[2024/10/02]",
+ *   "[2024/10.icon]",
+ * ]);
+ * ```
+ *
  * @param date - The date to be used for replacement.
  * @param template - The template containing placeholders to be replaced.
  * @returns An array of strings with the replaced values.
  */
 export const expand = (date: Date, template: string): string[] =>
-  template.split("\n").map((line) =>
-    line.replaceAll("@yyyy@", lightFormat(date, "yyyy"))
+  template.split("\n").flatMap((line) =>
+    line
+      // special tags
+      .replaceAll("@w@", `${getWeek(date)}`)
+      .replaceAll("@ww@", `${zero(getWeek(date))}`)
+      .replaceAll("@day_indicator@", `${youbiLine(date)}`)
       .replaceAll(
-        "@yyyy-MM-dd HH:mm:ss@",
-        lightFormat(date, "yyyy-MM-dd HH:mm:ss"),
-      )
-      .replaceAll("@yyyy-MM-dd@", lightFormat(date, "yyyy-MM-dd"))
-      .replace(
-        /@yyyy-MM-dd(?:([+-])(\d+)([ymw]?))?(?:\((Sun|Mon|Tue|Wed|Thu|Fri|Sat)\))?@/g,
-        (_, pm, amount, unit, day) => {
-          let newDate = walkDate(date, pm, unit, parseInt(amount));
-          if (day) {
-            newDate = addDays(startOfWeek(newDate), dayToNumber(day));
-          }
-          return lightFormat(newDate, "yyyy-MM-dd");
-        },
-      )
-      .replaceAll(
-        "@yyyy-ww@",
-        `${getYear(date)}-w${`${getWeek(date)}`.padStart(2, "0")}`,
+        "@progress@",
+        `${(getDayOfYear(date) * 100 / getDaysInYear(date)).toFixed(2)}`,
       )
       .replace(
-        /@yyyy-ww([+-])(\d+)([ymw]?)@/g,
-        (_, pm, amount, unit) => {
-          const newDate = walkDate(date, pm, unit, parseInt(amount));
-          return `${getYear(newDate)}-w${
-            `${getWeek(newDate)}`.padStart(2, "0")
-          }`;
+        /^(\s*)@\[from_(\d{4})(\D?)(\d{2})(\D?)(\d{2})\]@\s*/,
+        (_, indent, y, sep1, m, sep2, d) => {
+          const start = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+
+          const years = intervalToDuration({ start, end: date }).years ?? 0;
+
+          return [...Array(years).keys()].map(
+            (i) =>
+              `${indent}[${
+                yyyyMMdd(subYears(date, i + 1), sep1 ?? sep2 ?? "")
+              }]`,
+          ).join("\n");
         },
       )
-      .replaceAll("@yyyy-MM@", lightFormat(date, "yyyy-MM"))
+      // general patterns
       .replace(
-        /@yyyy-MM([+-])(\d+)([ymw]?)@/g,
-        (_, pm, amount, unit) => {
-          const newDate = walkDate(date, pm, unit, parseInt(amount));
-          return lightFormat(newDate, "yyyy-MM");
+        /@[^@]+@/g,
+        (input) => {
+          const result = parse(input as `@${string}@`);
+          return result.ok ? result.value(date) : input;
         },
-      )
+      ).split("\n")
   );
 
-const walkDate = (
-  date: Date,
-  pm: string,
-  unit: string,
-  amount: number,
-): Date => {
-  let newDate = date;
-  if (pm) {
-    const plus = pm === "+";
-    if (unit === "y") {
-      newDate = (plus ? addYears : subYears)(date, amount);
-    } else if (unit === "m") {
-      newDate = (plus ? addMonths : subMonths)(date, amount);
-    } else if (unit === "w") {
-      newDate = (plus ? addWeeks : subWeeks)(date, amount);
-    } else {
-      newDate = (plus ? addDays : subDays)(date, amount);
-    }
-  }
-  return newDate;
+const youbiLine = (date: Date): string => {
+  const day = getDay(date);
+  return [..."日月火水木金土"].map(
+    (char, i) => i === day ? `[[${char}]]` : char,
+  ).join("");
 };

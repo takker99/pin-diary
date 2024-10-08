@@ -1,10 +1,4 @@
 import { launch } from "../mod.ts";
-import { isOldDiary, makeDiary } from "./villagepump-template/mod.ts";
+import { villagepumpDiaryTemplate } from "./villagepump-template.ts";
 
-launch(
-  "villagepump",
-  {
-    makeDiary,
-    isOldDiary,
-  },
-);
+launch("villagepump", villagepumpDiaryTemplate);

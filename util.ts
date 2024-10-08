@@ -1,3 +1,8 @@
+import { getYear } from "date-fns/getYear";
+import { getWeek } from "date-fns/getWeek";
+import { getDate } from "date-fns/getDate";
+import { getMonth } from "date-fns/getMonth";
+
 /**
  * @internal
  * Patches the given lines by appending new lines from the `appends` array.
@@ -82,3 +87,18 @@ export const findSplitIndex = (lines: string[], query: string[]) => {
   }
   return index;
 };
+
+/** @internal */
+export const zero = (n: number) => `${n}`.padStart(2, "0");
+
+/** @internal */
+export const yyyy = (date: Date) => `${getYear(date)}`;
+/** @internal */
+export const yyyyMM = (date: Date, sep: string) =>
+  `${yyyy(date)}${sep}${zero(getMonth(date) + 1)}`;
+/** @internal */
+export const yyyyww = (date: Date, sep: string) =>
+  `${getYear(date)}${sep}w${zero(getWeek(date))}`;
+/** @internal */
+export const yyyyMMdd = (date: Date, sep: string) =>
+  `${yyyyMM(date, sep)}${sep}${zero(getDate(date))}`;
