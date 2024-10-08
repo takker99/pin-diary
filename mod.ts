@@ -9,9 +9,9 @@ import {
   useStatusBar,
 } from "@cosense/std/browser";
 import type { Scrapbox } from "@cosense/types/userscript";
-import { patchTemplate as format } from "./format.ts";
 import { delay } from "@std/async/delay";
 import { isString } from "@core/unknownutil/is/string";
+import { format } from "./format.ts";
 import { listPinnedPages } from "./list.ts";
 import {
   andThenAsyncForResult,
@@ -22,7 +22,8 @@ import {
   unwrapErr,
 } from "option-t/plain_result";
 import type { Socket } from "socket.io-client";
-export { patchTemplate } from "./format.ts";
+export { format } from "./format.ts";
+export { parse } from "./parse.ts";
 
 declare const scrapbox: Scrapbox;
 
@@ -89,7 +90,7 @@ const endObserve = () => clearInterval(updateTimer);
 /**
  * Pin [/`project`/`date`] and format it with the template
  *
- * To understand the syntax of the template, see the example of {@linkcode patchTemplate}
+ * To understand the syntax of the template, see the example of {@linkcode parse}
  *
  * @example
  * ```ts ignore

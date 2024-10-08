@@ -1,7 +1,11 @@
 {
   "name": "@takker/pin-diary",
   "version": "0.0.0",
-  "exports": "./mod.ts",
+  "exports": {
+    ".": "./mod.ts",
+    "./format": "./format.ts",
+    "./parse": "./parse.ts"
+  },
   "tasks": {
     "fix": "deno fmt && deno lint --fix && deno doc --lint **/*.ts && deno test --doc --parallel --shuffle && deno publish --dry-run --allow-dirty",
     "check": "deno fmt --check && deno lint && deno doc --lint **/*.ts && deno test --doc --parallel --shuffle && deno publish --dry-run",

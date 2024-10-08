@@ -6,7 +6,7 @@ import { findSplitIndex, patchLines } from "./util.ts";
  * @example
  * ```ts
  * import { assertEquals } from "@std/assert/equals";
- * import { patchTemplate } from "./format.ts";
+ * import { format } from "./format.ts";
  *
  * const headers = [
  *   "header start",
@@ -32,7 +32,7 @@ import { findSplitIndex, patchLines } from "./util.ts";
  *   "footer end",
  * ];
 
- * assertEquals<string[]>(patchTemplate(lines, headers, footers), [
+ * assertEquals<string[]>(format(lines, headers, footers), [
  *   "header start",
  *   "何か",
  *   "aaa",
@@ -57,7 +57,7 @@ import { findSplitIndex, patchLines } from "./util.ts";
  * @param footers template footer
  * @returns new page content applied to
  */
-export const patchTemplate = (
+export const format = (
   lines: string[],
   headers: string[],
   footers: string[],
